@@ -11,6 +11,7 @@ from PIL import Image
 
 import sounddevice as sd
 import numpy as np
+from playsound import playsound
 
 
 class MainWindow(CTk):
@@ -79,6 +80,25 @@ class MainWindow(CTk):
             self.add_message("System", "No connection", False)
 
         self.after(50, self.poll)
+
+    def play_sound(self):
+        def run():
+            try:
+                import soundfile as sf
+
+                data, samplerate = sf.read("dragon-studio-cuckoo-clock-359874.mp3", dtype="float32")
+
+                gain = 5.0
+                data = data * gain
+
+                data = np.clip(data, -1.0, 1.0)
+
+                sd.play(data, samplerate)
+                sd.wait()
+            except Exception as e:
+                print("Sound error:", e)
+
+        threading.Thread(target=run, daemon=True).start()
 
     def set_theme(self, theme):
         t = self.themes[theme]
@@ -188,6 +208,7 @@ class MainWindow(CTk):
         self.username = self.name_entry.get() if self.name_entry.get() else "Me"
 
         self.add_message(self.username, msg, True)
+        self.play_sound()
 
         try:
             self.sock.sendall(f"TEXT@{self.username}@{msg}\n".encode())
@@ -207,6 +228,7 @@ class MainWindow(CTk):
             data = f.read()
 
         self.add_image(data, True)
+        self.play_sound()
 
         try:
             self.sock.sendall(f"IMG@{self.username}@{base64.b64encode(data).decode()}\n".encode())
@@ -254,6 +276,7 @@ class MainWindow(CTk):
         data = buf.getvalue()
 
         self.add_voice(data, True)
+        self.play_sound()
 
         try:
             self.sock.sendall(f"VOICE@{self.username}@{base64.b64encode(data).decode()}\n".encode())
@@ -320,5 +343,8 @@ class MainWindow(CTk):
 
 
 if __name__ == "__main__":
+    set_appearance_mode("dark")
+    set_default_color_theme("blue")
+
     app = MainWindow()
     app.mainloop()
