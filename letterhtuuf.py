@@ -10,8 +10,8 @@ from customtkinter import *
 from PIL import Image
 
 import sounddevice as sd
+import soundfile as sf
 import numpy as np
-from playsound import playsound
 
 
 class MainWindow(CTk):
@@ -84,15 +84,7 @@ class MainWindow(CTk):
     def play_sound(self):
         def run():
             try:
-                import soundfile as sf
-
-                data, samplerate = sf.read("dragon-studio-cuckoo-clock-359874.mp3", dtype="float32")
-
-                gain = 5.0
-                data = data * gain
-
-                data = np.clip(data, -1.0, 1.0)
-
+                data, samplerate = sf.read("dragon-studio-cuckoo-clock-359874.wav", dtype="float32")
                 sd.play(data, samplerate)
                 sd.wait()
             except Exception as e:
@@ -123,12 +115,6 @@ class MainWindow(CTk):
             self.img_btn.configure(fg_color=self.mine)
             self.send_btn.configure(fg_color=self.mine)
 
-            for bubble, label, meta, is_me in self.message_widgets:
-                bubble.configure(fg_color=self.mine if is_me else self.other)
-                if label:
-                    label.configure(text_color=self.text)
-                meta.configure(text_color=self.text)
-
     def time(self):
         return datetime.now().strftime("%H:%M")
 
@@ -148,7 +134,6 @@ class MainWindow(CTk):
         meta = CTkLabel(container, text=f"{author} • {self.time()}", font=("Arial", 9), text_color=self.text)
         meta.pack(anchor="e")
 
-        self.message_widgets.append((bubble, label, meta, is_me))
         self.chat_frame._parent_canvas.yview_moveto(1.0)
 
     def add_image(self, data, is_me):
@@ -172,7 +157,6 @@ class MainWindow(CTk):
         meta = CTkLabel(container, text=self.time(), font=("Arial", 9), text_color=self.text)
         meta.pack(anchor="e" if is_me else "w", padx=5)
 
-        self.message_widgets.append((bubble, None, meta, is_me))
         self.chat_frame._parent_canvas.yview_moveto(1.0)
 
     def add_voice(self, data, is_me):
@@ -197,7 +181,6 @@ class MainWindow(CTk):
         meta = CTkLabel(container, text=self.time(), font=("Arial", 9), text_color=self.text)
         meta.pack(anchor="e" if is_me else "w", padx=5)
 
-        self.message_widgets.append((bubble, None, meta, is_me))
         self.chat_frame._parent_canvas.yview_moveto(1.0)
 
     def send_text(self):
@@ -205,7 +188,7 @@ class MainWindow(CTk):
         if not msg:
             return
 
-        self.username = self.name_entry.get() if self.name_entry.get() else "Me"
+        self.username = self.name_entry.get() or "Me"
 
         self.add_message(self.username, msg, True)
         self.play_sound()
@@ -331,10 +314,13 @@ class MainWindow(CTk):
 
                 if item[0] == "text":
                     self.add_message(item[1], item[2], False)
+                    self.play_sound()
                 elif item[0] == "img":
                     self.add_image(item[2], False)
+                    self.play_sound()
                 elif item[0] == "voice":
                     self.add_voice(item[2], False)
+                    self.play_sound()
 
         except queue.Empty:
             pass
